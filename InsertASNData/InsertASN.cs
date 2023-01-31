@@ -4,6 +4,7 @@ using System.Net;
 using System.Threading.Tasks;
 using InsertASNData.Agents.Details;
 using InsertASNData.Agents.Header;
+using InsertASNData.Agents.History;
 using InsertASNData.Agents.ShipType;
 using InsertASNData.Agents.Tracking;
 using InsertASNData.Models;
@@ -32,9 +33,10 @@ namespace InsertASNData
         private readonly IASNDetailsAgent _detailsAgent;
         private readonly IASNTrackingNumberAgent _trackingAgent;
         private readonly IASNShipTypeAgent _shiptype;
+        private readonly IASNHistory _history;
 
         public InsertASN(ILogger<InsertASN> log, ASNHeaderMDL headerMDL, IInsertASNHeaderAgent headerAgent, ASNDetailsMDL detailsMDL,IASNDetailsAgent detailsAgent,IASNTrackingNumberAgent trackingAgent,
-                         ASNTrackingMDL trackingMDL, IASNShipTypeAgent shiptype, ASNShipType shipTypeMDL)
+                         ASNTrackingMDL trackingMDL, IASNShipTypeAgent shiptype, ASNShipType shipTypeMDL, IASNHistory history)
         {
             _logger = log;
             _headerMDL = headerMDL;
@@ -46,6 +48,7 @@ namespace InsertASNData
             _trackingMDL = trackingMDL;
             _shiptype = shiptype;
             _shipTypeMDL = shipTypeMDL;
+            _history = history;
         }
 
         [FunctionName("InsertASN")]
@@ -69,36 +72,51 @@ namespace InsertASNData
             _headerMDL.Pallets = Convert.ToInt32(data?.Pallets);
             _headerMDL.StatusId = 1;
 
-            var results = await _headerAgent.InsertASNHeader(_headerMDL);
+            var ReturnMessage = "";
 
-            _headerMDL.ASNHeaderId = Convert.ToInt64(results);
-
-            foreach(var product in data?.InboundProducts)
+            try
             {
-                _detailsMDL.SKU = product.SKU;
-                _detailsMDL.Quantity = product.Quantity;
-                _detailsMDL.Price = product.Price;
+                var results = await _headerAgent.InsertASNHeader(_headerMDL);
 
-                await _detailsAgent.InsertASNDetails(_detailsMDL, _headerMDL.ASNHeaderId);
+                _headerMDL.ASNHeaderId = Convert.ToInt64(results);
+
+                foreach (var product in data?.InboundProducts)
+                {
+                    _detailsMDL.SKU = product.SKU;
+                    _detailsMDL.Quantity = product.Quantity;
+                    _detailsMDL.Price = product.Price;
+
+                    await _detailsAgent.InsertASNDetails(_detailsMDL, _headerMDL.ASNHeaderId);
+                }
+
+                foreach (var tracking in data?.ListOfTrackingNumbers)
+                {
+                    _trackingMDL.TrackingNumber = tracking;
+
+                    await _trackingAgent.InsertASNTrackingNumber(_trackingMDL, _headerMDL.ASNHeaderId);
+                }
+
+                _shipTypeMDL.ShipTypeId = data?.ShipmentType;
+
+                await _shiptype.InsertASNTrackingNumber(_shipTypeMDL, _headerMDL.ASNHeaderId);
+
+
+                await _history.InsertASNHistory( $"ANS inserted successfully", _headerMDL.ASNHeaderId, 1);
+
+                string headerIdString = Convert.ToString(_headerMDL.ASNHeaderId);
+
+                ReturnMessage = $"ASN {headerIdString} has been inserted";
+            }
+            catch (Exception ex)
+            {
+                ReturnMessage = ex.Message;
             }
 
-            foreach(var tracking in data?.ListOfTrackingNumbers)
-            {
-                _trackingMDL.TrackingNumber = tracking;
+            
 
-                await _trackingAgent.InsertASNTrackingNumber(_trackingMDL,_headerMDL.ASNHeaderId);
-            }
-
-            _shipTypeMDL.ShipTypeId = data?.ShipmentType;
-
-            await _shiptype.InsertASNTrackingNumber(_shipTypeMDL,_headerMDL.ASNHeaderId);
-
-
-            string headerIdString = Convert.ToString(_headerMDL.ASNHeaderId);
-
-            string responseMessage = string.IsNullOrEmpty(headerIdString)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : headerIdString;
+            string responseMessage = string.IsNullOrEmpty(ReturnMessage)
+                ? "This HTTP triggered function executed."
+                : ReturnMessage;
 
             return new OkObjectResult(responseMessage);
         }
