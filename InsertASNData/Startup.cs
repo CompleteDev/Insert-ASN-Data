@@ -1,6 +1,7 @@
 ﻿using DataAccess.DbAccess;
 using InsertASNData.Agents.Details;
 using InsertASNData.Agents.Header;
+using InsertASNData.Agents.History;
 using InsertASNData.Agents.ShipType;
 using InsertASNData.Agents.Tracking;
 using InsertASNData.Models;
@@ -23,6 +24,7 @@ namespace InsertASNData
             builder.Services.AddScoped<IASNDetailsAgent, ASNDetailsAgent>();
             builder.Services.AddScoped<IASNTrackingNumberAgent, ASNTrackingNumberAgent>();
             builder.Services.AddScoped<IASNShipTypeAgent, ASNShipTypeAgent>();
+            builder.Services.AddScoped<IASNHistory, ASNHistory>();
             builder.Services.AddScoped<ASNHeaderMDL, ASNHeaderMDL>();
             builder.Services.AddScoped<ASNDetailsMDL, ASNDetailsMDL>();
             builder.Services.AddScoped<ASNTrackingMDL, ASNTrackingMDL>();
