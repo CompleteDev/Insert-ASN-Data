@@ -52,7 +52,7 @@ namespace InsertASNData
         }
 
         [FunctionName("InsertASN")]
-        [OpenApiOperation(operationId: "Run", tags: new[] { "name" })]
+        [OpenApiOperation(operationId: "Run", tags: new[] { "InsertASN" })]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "The OK response")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req)
@@ -101,7 +101,7 @@ namespace InsertASNData
                 await _shiptype.InsertASNTrackingNumber(_shipTypeMDL, _headerMDL.ASNHeaderId);
 
 
-                await _history.InsertASNHistory( $"ANS inserted successfully", _headerMDL.ASNHeaderId, 1);
+                await _history.InsertASNHistory( $"ASN inserted successfully", _headerMDL.ASNHeaderId, 1);
 
                 string headerIdString = Convert.ToString(_headerMDL.ASNHeaderId);
 
