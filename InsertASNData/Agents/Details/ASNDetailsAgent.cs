@@ -15,7 +15,7 @@ namespace InsertASNData.Agents.Details
 
         public async Task InsertASNDetails(ASNDetailsMDL detailsMDL, long HeaderId)
         {
-            await _db.SaveData("INSERT INTO ASNDetails(ASNHeaderId,SKU,Quanity,Price) VALUES(@HeaderId,@SKU,@Quantity,@Price)",
+            await _db.SaveData("INSERT INTO ASNDetails(ASNHeaderId,SKU,Quantity,Price) VALUES(@HeaderId,@SKU,@Quantity,@Price)",
                   new { HeaderId, detailsMDL.SKU, detailsMDL.Quantity, detailsMDL.Price });
         }
     }
